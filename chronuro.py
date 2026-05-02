@@ -2,20 +2,22 @@ import speech_recognition as sr
 from gtts import gTTS
 from google import genai
 import os
-from config import GEMINI_API_KEY
+import re
+from dotenv import load_dotenv
 from features.datetime_feature import get_time, get_date, get_day, get_datetime
+from features.weather_feature import get_weather
 
-# Setup Gemini
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-import re
-
 def clean_text(text):
-    text = re.sub(r'\*+', '', text)   # remove *
-    text = re.sub(r'#+', '', text)    # remove #
-    text = re.sub(r'`+', '', text)    # remove `
-    text = re.sub(r'\n+', ' ', text)  # remove newlines
-    text = re.sub(r'\s+', ' ', text)  # remove extra spaces
+    text = re.sub(r'\*+', '', text)
+    text = re.sub(r'#+', '', text)
+    text = re.sub(r'`+', '', text)
+    text = re.sub(r'\n+', ' ', text)
+    text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
 def speak(text):
@@ -24,6 +26,7 @@ def speak(text):
     tts = gTTS(text=clean, lang='en', slow=False)
     tts.save("response.mp3")
     os.system("afplay response.mp3 -r 1.2")
+
 def listen():
     r = sr.Recognizer()
     with sr.Microphone() as source:
@@ -40,18 +43,18 @@ def listen():
 def ask_gemini(query):
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="models/gemini-2.0-flash",
             contents=query
         )
-
-        return response.text
-
+        if response.text:
+            return response.text
+        return "Sorry sir, I could not understand the response."
     except Exception as e:
         print("Gemini Error:", e)
-        return "Sorry sir, Gemini is currently unavailable."
-    
+        return "Sorry sir, Gemini is not responding right now."
+
 def run_chronuro():
-    speak("Hello Sir, I am Chronuro, How Can I Help You")
+    speak("Hello Sir, Chronuro online. Time-aware intelligence at your service.")
     while True:
         query = listen()
 
@@ -69,6 +72,9 @@ def run_chronuro():
 
         elif "what's today" in query or "whats today" in query:
             speak(get_datetime())
+
+        elif "weather" in query or "temperature" in query:
+            speak(get_weather())
 
         elif "exit" in query or "bye" in query:
             speak("Goodbye Sir, Chronuro going offline!")
