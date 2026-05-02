@@ -1,0 +1,6 @@
+venv/
+config.py
+.env
+response.mp3
+__pycache__/
+.DS_Store
