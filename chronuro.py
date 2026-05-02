@@ -1,3 +1,4 @@
+from features.youtube_feature import search_youtube
 import speech_recognition as sr
 from gtts import gTTS
 from google import genai
@@ -54,34 +55,29 @@ def ask_gemini(query):
         return "Sorry sir, Gemini is not responding right now."
 
 def run_chronuro():
-    speak("Hello Sir, Chronuro online. Time-aware intelligence at your service.")
+    speak("Hello Sir,How are You")
     while True:
         query = listen()
 
         if query == "":
             continue
 
-        elif "time" in query:
-            speak(get_time())
-
-        elif "date" in query:
-            speak(get_date())
-
-        elif "day" in query:
-            speak(get_day())
-
-        elif "what's today" in query or "whats today" in query:
-            speak(get_datetime())
-
-        elif "weather" in query or "temperature" in query:
-            speak(get_weather())
-
-        elif "exit" in query or "bye" in query:
+        # exit
+        elif "exit" in query or "bye" in query or "goodbye" in query:
             speak("Goodbye Sir, Chronuro going offline!")
             break
 
+        # youtube
+        elif "youtube" in query:
+            search_term = query.replace("search youtube for", "").replace("play", "").replace("youtube", "").strip()
+            speak(search_youtube(search_term))
+
+        # everything else goes to Gemini — including time, date, weather questions
         else:
-            reply = ask_gemini(query)
+            # give Gemini context about current time and weather
+            now_context = f"Current time is {get_time()}. Today is {get_date()}."
+            full_query = f"{now_context}\n\nUser asked: {query}\n\nAnswer naturally and concisely like a voice assistant. No bullet points, no markdown."
+            reply = ask_gemini(full_query)
             speak(reply)
 
 if __name__ == "__main__":
